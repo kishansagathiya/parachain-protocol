@@ -80,8 +80,6 @@ Here is a description of the: the path a parachain block (or parablock, for shor
 
 ![](./slide6.jpg)
 
-![](./slide7.jpg)
-
 ## Approval Process
 
 Once a parablock is considered available and part of the parachain, it is still "pending approval". 
@@ -105,6 +103,7 @@ A parablock's failure to pass the approval process will invalidate the block as 
 
 Approval Process can be running for many parachain blocks at once.
 
+![](./slide7.jpg)
 
 
 ### What is a Core?
@@ -166,3 +165,65 @@ They accomplish this by
 - keeping track of which validator has which chunk by means of signed bitfields. 
 
 They are also responsible for reassembling a complete PoV when required, e.g. when an approval checker needs to validate a parachain block.
+
+### Availability Distribution
+
+Responsible for distribution availability data to peers. Availability data are chunks, **PoVs** and **PersistedValidationData** (input for candidate validation).
+
+- Respond to network requests requesting availability data by querying the Availability Store.
+- Request chunks from backing validators to put them in the local Availability Store whenever we find an occupied core on any fresh leaf, this is to ensure availability by at least 2/3+ of all validators, this happens after a candidate is backed.
+- Fetch PoV from validators, when requested via FetchPoV message from backing (pov_requester module).
+
+### Availability Recovery
+This subsystem is responsible for recovering the data made available via the Availability Distribution subsystem, neccessary for candidate validation during the approval/disputes processes. 
+Additionally, it is also being used by collators to recover PoVs in adversarial scenarios where the other collators of the para are censoring blocks.
+
+According to the Polkadot protocol, in order to recover any given AvailableData, we generally **must recover at least f + 1 pieces** from validators of the session. Thus, we should connect to and query randomly chosen validators until we have received f + 1 pieces.
+
+There are various optimisations which avoid querying all chunks from different validators and/or avoid doing the chunk reconstruction altogether.
+
+Strategies:
+- FetchFull
+Request full available data from the validators in the backing group to which node is already connected.
+- FetchChunks
+All validators would be tried. Worst performing strategy but most comprehensive.
+- FetchSystematicChunks
+
+### Bitfield Distribution and Signing
+Validators vote on the availability of a backed candidate by issuing signed bitfields, where each bit corresponds to a single candidate. These bitfields can be used to compactly determine which backed candidates are available or not based on a 2/3+ quorum.
+
+- Gossip system
+- Accept bitfield relevant to our view and distribute to other peers when relevant to their view
+- Accept and distribute only one bitfield per validator.
+
+## Provisioner
+This subsystem is responsible for providing the necessary data to all potential block authors (BABE). This subsystem provides the data for parachain inherents.
+
+### Provisionable Data
+- Backed Candidates
+
+The block author can choose 0 or 1 backed parachain candidates per parachain.
+
+The only constraint is that each backable candidate has the appropriate relay parent. However, the choice of a backed candidate must be the block author's. The provisioner subsystem is how those block authors make this choice in practice.
+
+- Signed Bitfields
+
+Attestation from validators that candidates are available
+
+- Misbehavior reports
+
+Self-contained proofs of misbehavior by a validator or group of validators.
+
+Misbehavior reports become inherents which cause dots to be slashed.
+
+Block authors are not forced to put these reports in inherents. But because slashing period is long, we expect to encount an honest validator eventually.
+
+ex, double spending
+
+- Dispute Inherent
+
+The dispute inherent is similar to a misbehavior report in that it is an attestation of misbehavior on the part of a validator or group of validators. Unlike a misbehavior report, it is not self-contained: resolution requires coordinated action by several validators. 
+
+Will cause slashing too.
+
+ex, approvers found invalid block.
