@@ -227,3 +227,19 @@ The dispute inherent is similar to a misbehavior report in that it is an attesta
 Will cause slashing too.
 
 ex, approvers found invalid block.
+
+
+## Architecture
+
+### Subsystems
+
+Parachain protocol has been divided into multiple **subsytems** that run in parallel. 
+
+Subsystems are long-lived worker tasks that are in charge of performing some particular kind of work. 
+
+Subsystems communicate with each other through this thing called **Overseer**. Every time we have to send a message to a other nodes, we do that through a subsytem called **network bridge**.
+
+Primary benefit of having this subsystems is that we would be able to _process many candidate at the same time, without getting blocked in the pipeline_.
+
+All the work will happen on top of a relay block, we call it **relay parent**.
+Goal of determining when to start and conclude work relative to a specific relay-parent is common to most subsystems. Overseer acts as a heartbeat to the system and provides this relay-parent signal for all subsystems to do work relative to it.
