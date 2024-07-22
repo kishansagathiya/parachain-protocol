@@ -105,8 +105,6 @@ Approval Process can be running for many parachain blocks at once.
 
 ![](./slide7.jpg)
 
-
-### What is a Core?
 ### Collator Protocol
 
 The Collator Protocol implements the network protocol by which collators and validators communicate. It is used by collators to distribute collations to validators and used by validators to accept collations by collators.
@@ -228,6 +226,7 @@ Will cause slashing too.
 
 ex, approvers found invalid block.
 
+The tuple (`SignedAvailabilityBitfields`, `BackedCandidates`, `ParentHeader`) is injected by the ParachainsInherentDataProvider into the inherent data. From that point on, control passes from the node to the runtime.
 
 ## Architecture
 
@@ -243,3 +242,11 @@ Primary benefit of having this subsystems is that we would be able to _process m
 
 All the work will happen on top of a relay block, we call it **relay parent**.
 Goal of determining when to start and conclude work relative to a specific relay-parent is common to most subsystems. Overseer acts as a heartbeat to the system and provides this relay-parent signal for all subsystems to do work relative to it.
+
+# What do I need to become a Validator?
+
+- Actually everything in parachain protocol (backing, availability, approval)
+
+- Since disputes are a rare occurence, we could do without it and prioritize it later.
+
+
